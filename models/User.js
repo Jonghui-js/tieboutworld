@@ -1,0 +1,106 @@
+const crypto = require('crypto');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const UserSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'ID를 입력하세요'],
+    unique: true,
+    maxlength: [20, '20자 이내로 입력하세요'],
+  },
+  email: {
+    type: String,
+    required: [true, '이메일을 입력하세요'],
+    unique: true,
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      '유효한 이메일 형식이 아닙니다',
+    ],
+  },
+  role: {
+    type: String,
+    enum: ['footer', 'leader', 'tiebout'],
+    default: 'footer',
+  },
+  password: {
+    type: String,
+    required: [true, '비밀번호를 입력하세요'],
+    minlength: 6,
+    select: false,
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  balance: {
+    type: Number,
+    index: true,
+    default: 100,
+  },
+  currentArea: {
+    type: String,
+    default: '',
+  },
+  areaHistory: [
+    {
+      area: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Area',
+      },
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+UserSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+UserSchema.set('toJSON', {
+  virtuals: true,
+});
+
+//encrypt password using bcript
+
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Sign JWT and return
+UserSchema.methods.getSignedJwtToken = function () {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE,
+  });
+};
+
+UserSchema.methods.matchPassword = async function (enterPassword) {
+  return await bcrypt.compare(enterPassword, this.password);
+};
+
+UserSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+module.exports = mongoose.model('User', UserSchema);
