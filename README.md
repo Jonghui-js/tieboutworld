@@ -22,5 +22,5 @@
 ## 사진
 
 <div>
-<img src="images/tiebout.gif" width="500px">
+<img src="images/tiebout.gif" width="700px">
 </div>
