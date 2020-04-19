@@ -46,12 +46,18 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+/*
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('client/build'));
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
   });
 }
+*/
+app.use(express.static('client/apidoc'));
+app.get('/api/v1/apidoc', function (req, res) {
+  res.sendFile(path.resolve(__dirname, 'client', 'apidoc', 'apidoc.html'));
+});
 
 app.use('/api/v1/areas', areas);
 app.use('/api/v1/auth', auth);
