@@ -2,7 +2,6 @@
 
 ## 웹사이트
 
-[www.tieboutworld.com](http://www.tieboutworld.com)
 
 ## 기술
 
